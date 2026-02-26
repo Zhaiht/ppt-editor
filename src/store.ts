@@ -26,6 +26,7 @@ interface EditorState {
   setEditingText: (id: string | null) => void;
   setSlideBackground: (color: string) => void;
   moveSlide: (from: number, to: number) => void;
+  newPresentation: () => void;
   getCurrentSlide: () => Slide;
   getSelectedElement: () => SlideElement | undefined;
 }
@@ -103,6 +104,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const [moved] = slides.splice(from, 1);
     slides.splice(to, 0, moved);
     return { slides, currentSlideIndex: to };
+  }),
+
+  newPresentation: () => set({
+    slides: [createDefaultSlide()],
+    currentSlideIndex: 0,
+    selectedElementId: null,
+    activeTool: 'select',
+    editingTextId: null,
   }),
 
   getCurrentSlide: () => {

@@ -19,7 +19,7 @@ const insertTools: { key: Tool; label: string; svgPath: string }[] = [
 ];
 
 export const EditorToolbar: React.FC = () => {
-  const { activeTool, setActiveTool, addElement, deleteElement, selectedElementId, slides, currentSlideIndex } = useEditorStore();
+  const { activeTool, setActiveTool, addElement, deleteElement, selectedElementId, slides, currentSlideIndex, addSlide } = useEditorStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const slide = slides[currentSlideIndex];
   const selectedEl = slide.elements.find((e) => e.id === selectedElementId);
@@ -47,10 +47,10 @@ export const EditorToolbar: React.FC = () => {
     <div style={s.bar}>
       <div style={s.group}>
         <ToolBtn
-          label="选择"
-          active={activeTool === 'select'}
-          onClick={() => setActiveTool('select')}
-          svgPath="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3zM13 13l6 6"
+          label="新建PPT"
+          active={false}
+          onClick={() => addSlide()}
+          svgPath="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M12 18v-6M9 15h6"
         />
         <div style={s.sep} />
         {insertTools.map((t) => (
