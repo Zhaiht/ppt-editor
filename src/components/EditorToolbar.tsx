@@ -1,26 +1,51 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 import { useEditorStore } from '../store';
-import { Tool } from '../types';
+import { Tool, Slide, SlideElement } from '../types';
+
+const themes: { name: string; background: string; titleColor: string; accent: string }[] = [
+  { name: '空白', background: '#ffffff', titleColor: '#333333', accent: '#4A90D9' },
+  { name: '深邃蓝', background: '#1a2a4a', titleColor: '#ffffff', accent: '#5b9bd5' },
+  { name: '暗夜黑', background: '#1e1e1e', titleColor: '#e0e0e0', accent: '#bb86fc' },
+  { name: '清新绿', background: '#e8f5e9', titleColor: '#2e7d32', accent: '#66bb6a' },
+  { name: '暖阳橙', background: '#fff3e0', titleColor: '#e65100', accent: '#ffa726' },
+  { name: '优雅紫', background: '#f3e5f5', titleColor: '#6a1b9a', accent: '#ab47bc' },
+  { name: '商务灰', background: '#f5f5f5', titleColor: '#424242', accent: '#78909c' },
+  { name: '渐变蓝', background: '#e3f2fd', titleColor: '#0d47a1', accent: '#42a5f5' },
+];
+
+function createThemedSlide(theme: typeof themes[0]): Slide {
+  const elements: SlideElement[] = [];
+  if (theme.name !== '空白') {
+    elements.push({
+      id: uuid(), type: 'text', x: 80, y: 180, width: 800, height: 80,
+      rotation: 0, content: '点击输入标题', fontSize: 36, fontFamily: 'Microsoft YaHei',
+      color: theme.titleColor, bold: true,
+    });
+    elements.push({
+      id: uuid(), type: 'text', x: 80, y: 280, width: 800, height: 50,
+      rotation: 0, content: '点击输入副标题', fontSize: 20, fontFamily: 'Microsoft YaHei',
+      color: theme.titleColor,
+    });
+    elements.push({
+      id: uuid(), type: 'rect', x: 80, y: 270, width: 120, height: 4,
+      rotation: 0, fill: theme.accent, stroke: theme.accent, strokeWidth: 0,
+    });
+  }
+  return { id: uuid(), elements, background: theme.background };
+}
+
 
 const insertTools: { key: Tool; label: string; svgPath: string }[] = [
-  {
-    key: 'text', label: '文本框',
-    svgPath: 'M4 7V4h16v3M9 20h6M12 4v16',
-  },
-  {
-    key: 'rect', label: '矩形',
-    svgPath: 'M3 3h18v18H3z',
-  },
-  {
-    key: 'ellipse', label: '椭圆',
-    svgPath: 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z',
-  },
+  { key: 'text', label: '文本框', svgPath: 'M4 7V4h16v3M9 20h6M12 4v16' },
+  { key: 'rect', label: '矩形', svgPath: 'M3 3h18v18H3z' },
+  { key: 'ellipse', label: '椭圆', svgPath: 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z' },
 ];
 
 export const EditorToolbar: React.FC = () => {
   const { activeTool, setActiveTool, addElement, deleteElement, selectedElementId, slides, currentSlideIndex, addSlide } = useEditorStore();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [showThemes, setShowThemes] = useState(false);
   const slide = slides[currentSlideIndex];
   const selectedEl = slide.elements.find((e) => e.id === selectedElementId);
 
@@ -43,15 +68,43 @@ export const EditorToolbar: React.FC = () => {
     e.target.value = '';
   };
 
+  const handleThemeSelect = (theme: typeof themes[0]) => {
+    addSlide(createThemedSlide(theme));
+    setShowThemes(false);
+  };
+
   return (
     <div style={s.bar}>
       <div style={s.group}>
-        <ToolBtn
-          label="新建PPT"
-          active={false}
-          onClick={() => addSlide()}
-          svgPath="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M12 18v-6M9 15h6"
-        />
+        <div style={{ position: 'relative' }}>
+          <ToolBtn
+            label="新建PPT"
+            active={showThemes}
+            onClick={() => setShowThemes(!showThemes)}
+            svgPath="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M12 18v-6M9 15h6"
+          />
+          {showThemes && (
+            <div style={s.themePicker} onMouseLeave={() => setShowThemes(false)}>
+              <div style={s.themeTitle}>选择主题</div>
+              <div style={s.themeGrid}>
+                {themes.map((t) => (
+                  <button key={t.name} style={s.themeCard} onClick={() => handleThemeSelect(t)}>
+                    <div style={{ ...s.themePreview, background: t.background, border: t.background === '#ffffff' ? '1px solid #ddd' : 'none' }}>
+                      {t.name !== '空白' && (
+                        <>
+                          <div style={{ width: 40, height: 3, background: t.accent, borderRadius: 2, marginBottom: 3 }} />
+                          <div style={{ width: 50, height: 4, background: t.titleColor, borderRadius: 2, opacity: 0.7 }} />
+                          <div style={{ width: 35, height: 3, background: t.titleColor, borderRadius: 2, opacity: 0.4, marginTop: 2 }} />
+                        </>
+                      )}
+                    </div>
+                    <span style={s.themeName}>{t.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         <div style={s.sep} />
         {insertTools.map((t) => (
           <ToolBtn
@@ -94,6 +147,7 @@ export const EditorToolbar: React.FC = () => {
   );
 };
 
+
 function ToolBtn({ label, active, onClick, svgPath, danger }: {
   label: string; active: boolean; onClick: () => void; svgPath: string; danger?: boolean;
 }) {
@@ -121,17 +175,32 @@ function ToolBtn({ label, active, onClick, svgPath, danger }: {
 
 const s: Record<string, React.CSSProperties> = {
   bar: {
-    height: 40,
-    background: '#fff',
-    borderBottom: '1px solid #e2e2e2',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '0 16px',
-    flexShrink: 0,
-    gap: 8,
+    height: 40, background: '#fff', borderBottom: '1px solid #e2e2e2',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '0 16px', flexShrink: 0, gap: 8,
   },
   group: { display: 'flex', alignItems: 'center', gap: 2 },
   sep: { width: 1, height: 20, background: '#e0e0e0', margin: '0 6px' },
   info: { fontSize: 12, color: '#888', marginRight: 4 },
+  themePicker: {
+    position: 'absolute', top: '100%', left: 0, marginTop: 4,
+    background: '#fff', borderRadius: 8, padding: '12px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.15)', border: '1px solid #e5e5e5',
+    zIndex: 1000, width: 320,
+  },
+  themeTitle: { fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 },
+  themeGrid: {
+    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8,
+  },
+  themeCard: {
+    display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 4,
+    padding: 4, border: '1px solid #eee', borderRadius: 6, background: 'none',
+    cursor: 'pointer', transition: 'all 0.15s',
+  },
+  themePreview: {
+    width: 60, height: 38, borderRadius: 4,
+    display: 'flex', flexDirection: 'column' as const,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  themeName: { fontSize: 11, color: '#666' },
 };

@@ -18,7 +18,7 @@ interface EditorState {
   setFileName: (name: string) => void;
   setActiveTool: (tool: Tool) => void;
   setCurrentSlide: (index: number) => void;
-  addSlide: () => void;
+  addSlide: (slide?: Slide) => void;
   deleteSlide: (index: number) => void;
   duplicateSlide: (index: number) => void;
   addElement: (el: SlideElement) => void;
@@ -45,8 +45,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setActiveTool: (tool) => set({ activeTool: tool }),
   setCurrentSlide: (index) => set({ currentSlideIndex: index, selectedElementId: null, editingTextId: null }),
 
-  addSlide: () => set((s) => {
-    const newSlide = createDefaultSlide();
+  addSlide: (slide?) => set((s) => {
+    const newSlide = slide || createDefaultSlide();
     const slides = [...s.slides];
     slides.splice(s.currentSlideIndex + 1, 0, newSlide);
     return { slides, currentSlideIndex: s.currentSlideIndex + 1, selectedElementId: null, editingTextId: null };
