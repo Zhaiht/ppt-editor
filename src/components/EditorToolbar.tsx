@@ -46,6 +46,43 @@ const TABLE_GRID_MAX = 8;
 
 function TableGridPicker({ onSelect, onClose }: { onSelect: (rows: number, cols: number) => void; onClose: () => void }) {
   const [hover, setHover] = React.useState({ r: 0, c: 0 });
+  const [showCustom, setShowCustom] = React.useState(false);
+  const [customRows, setCustomRows] = React.useState('4');
+  const [customCols, setCustomCols] = React.useState('4');
+
+  const handleCustomSubmit = () => {
+    const r = Math.min(50, Math.max(1, parseInt(customRows, 10) || 1));
+    const c = Math.min(50, Math.max(1, parseInt(customCols, 10) || 1));
+    onSelect(r, c);
+  };
+
+  if (showCustom) {
+    return (
+      <div style={s.gridPicker} onClick={(e) => e.stopPropagation()}>
+        <div style={s.gridLabel}>自定义表格</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 0' }}>
+          <label style={s.customLabel}>
+            行数
+            <input type="number" min={1} max={50} value={customRows}
+              onChange={(e) => setCustomRows(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCustomSubmit(); }}
+              style={s.customInput} autoFocus />
+          </label>
+          <label style={s.customLabel}>
+            列数
+            <input type="number" min={1} max={50} value={customCols}
+              onChange={(e) => setCustomCols(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCustomSubmit(); }}
+              style={s.customInput} />
+          </label>
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 4 }}>
+            <button style={s.customBtnCancel} onClick={() => setShowCustom(false)}>返回</button>
+            <button style={s.customBtnOk} onClick={handleCustomSubmit}>确定</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={s.gridPicker} onMouseLeave={onClose}>
@@ -73,9 +110,12 @@ function TableGridPicker({ onSelect, onClose }: { onSelect: (rows: number, cols:
           </div>
         ))}
       </div>
+      <div style={s.customDivider} />
+      <button style={s.customTrigger} onClick={() => setShowCustom(true)}>自定义...</button>
     </div>
   );
 }
+
 
 export const EditorToolbar: React.FC = () => {
   const { activeTool, setActiveTool, addElement, deleteElement, selectedElementId, slides, currentSlideIndex, addSlide, setPendingTableSize } = useEditorStore();
@@ -265,4 +305,26 @@ const s: Record<string, React.CSSProperties> = {
   },
   gridLabel: { fontSize: 12, color: '#555', textAlign: 'center' as const, marginBottom: 6, fontWeight: 500 },
   gridContainer: { display: 'flex', flexDirection: 'column' as const },
+  customDivider: { height: 1, background: '#e5e5e5', margin: '8px 0' },
+  customTrigger: {
+    display: 'block', width: '100%', padding: '6px 0', border: 'none',
+    background: 'none', color: '#4a86e8', fontSize: 12, cursor: 'pointer',
+    textAlign: 'center' as const, borderRadius: 4, transition: 'background 0.1s',
+  },
+  customLabel: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    fontSize: 13, color: '#444', gap: 8,
+  },
+  customInput: {
+    width: 70, padding: '4px 8px', border: '1px solid #d0d0d0', borderRadius: 4,
+    fontSize: 13, outline: 'none', textAlign: 'center' as const,
+  },
+  customBtnCancel: {
+    padding: '5px 14px', border: '1px solid #d0d0d0', borderRadius: 4,
+    background: '#fff', color: '#555', fontSize: 12, cursor: 'pointer',
+  },
+  customBtnOk: {
+    padding: '5px 14px', border: 'none', borderRadius: 4,
+    background: '#4a86e8', color: '#fff', fontSize: 12, cursor: 'pointer',
+  },
 };
