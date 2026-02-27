@@ -17,8 +17,8 @@ export const Canvas: React.FC = () => {
   const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
 
   const {
-    slides, currentSlideIndex, selectedElementId, activeTool, editingTextId,
-    selectElement, addElement, updateElement, setActiveTool, setEditingText,
+    slides, currentSlideIndex, selectedElementId, activeTool, editingTextId, pendingTableSize,
+    selectElement, addElement, updateElement, setActiveTool, setEditingText, setPendingTableSize,
   } = useEditorStore();
 
   const slide = slides[currentSlideIndex];
@@ -87,7 +87,7 @@ export const Canvas: React.FC = () => {
     const { x: sx, y: sy } = toSlide(cx, cy);
 
     // creating new elements
-    if (activeTool === 'text') {
+  if (activeTool === 'text') {
       const id = uuid();
       addElement({
         id, type: 'text', x: sx, y: sy, width: 200, height: 50, rotation: 0,
@@ -95,8 +95,8 @@ export const Canvas: React.FC = () => {
       });
       setActiveTool('select');
       return;
-    }
-    if (activeTool === 'rect' || activeTool === 'ellipse') {
+  }
+  if (activeTool === 'rect' || activeTool === 'ellipse') {
       const id = uuid();
       addElement({
         id, type: activeTool, x: sx, y: sy, width: 150, height: 100, rotation: 0,
@@ -104,6 +104,30 @@ export const Canvas: React.FC = () => {
         stroke: activeTool === 'rect' ? '#2C5F8A' : '#8A2C2C',
         strokeWidth: 2,
       });
+      setActiveTool('select');
+      return;
+    }
+    if (activeTool === 'table') {
+      if (!pendingTableSize) {
+        setActiveTool('select');
+        return;
+      }
+      const { rows, cols } = pendingTableSize;
+      const id = uuid();
+      addElement({
+        id,
+        type: 'table',
+        x: sx,
+        y: sy,
+        width: cols * 80,
+        height: rows * 36,
+        rotation: 0,
+        stroke: '#666666',
+        strokeWidth: 1,
+        rows,
+        cols,
+      });
+      setPendingTableSize(null);
       setActiveTool('select');
       return;
     }

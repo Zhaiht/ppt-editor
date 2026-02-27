@@ -88,6 +88,41 @@ function StyleTab({ el, updateElement }: { el: any; updateElement: any }) {
           </Row>
         </Section>
       )}
+
+      {el.type === 'table' && (
+        <Section title="表格">
+          <div style={s.grid2}>
+            <LabelInput
+              label="行"
+              value={el.rows || 3}
+              onChange={(v: number) => updateElement(el.id, { rows: Math.min(20, Math.max(1, v)) })}
+            />
+            <LabelInput
+              label="列"
+              value={el.cols || 4}
+              onChange={(v: number) => updateElement(el.id, { cols: Math.min(20, Math.max(1, v)) })}
+            />
+          </div>
+          <Row label="边框色">
+            <input
+              type="color"
+              value={el.stroke || '#666666'}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateElement(el.id, { stroke: e.target.value })}
+              style={s.colorPick}
+            />
+          </Row>
+          <Row label="边框宽">
+            <input
+              type="number"
+              value={el.strokeWidth ?? 1}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                updateElement(el.id, { strokeWidth: Number(e.target.value) || 1 })
+              }
+              style={s.input}
+            />
+          </Row>
+        </Section>
+      )}
     </div>
   );
 }

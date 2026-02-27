@@ -71,6 +71,22 @@ function addImageElement(pptSlide: PptxGenJS.Slide, el: SlideElement) {
   });
 }
 
+function addTableElement(pptSlide: PptxGenJS.Slide, el: SlideElement) {
+  const rows = el.rows || 3;
+  const cols = el.cols || 4;
+  const tableData: string[][] = Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () => ''),
+  );
+
+  pptSlide.addTable(tableData, {
+    x: px2inch(el.x, 'x'),
+    y: px2inch(el.y, 'y'),
+    w: px2inch(el.width, 'x'),
+    h: px2inch(el.height, 'y'),
+    border: { type: 'solid', color: hexToRgb(el.stroke || '#666666'), pt: el.strokeWidth ?? 1 },
+  });
+}
+
 export async function exportToPptx(slides: Slide[], filename: string = '演示文稿') {
   const pptx = new PptxGenJS();
   pptx.layout = 'LAYOUT_WIDE';
@@ -97,6 +113,9 @@ export async function exportToPptx(slides: Slide[], filename: string = '演示�
           break;
         case 'image':
           addImageElement(pptSlide, el);
+          break;
+        case 'table':
+          addTableElement(pptSlide, el);
           break;
       }
     }

@@ -1,6 +1,6 @@
 export interface SlideElement {
   id: string;
-  type: 'text' | 'rect' | 'ellipse' | 'image';
+  type: 'text' | 'rect' | 'ellipse' | 'image' | 'table';
   x: number;
   y: number;
   width: number;
@@ -16,6 +16,10 @@ export interface SlideElement {
   imageSrc?: string;
   bold?: boolean;
   italic?: boolean;
+
+  // table specific
+  rows?: number;
+  cols?: number;
 }
 
 export interface Slide {
@@ -24,7 +28,7 @@ export interface Slide {
   background: string;
 }
 
-export type Tool = 'select' | 'text' | 'rect' | 'ellipse' | 'image';
+export type Tool = 'select' | 'text' | 'rect' | 'ellipse' | 'image' | 'table';
 
 export interface DragState {
   type: 'move' | 'resize';

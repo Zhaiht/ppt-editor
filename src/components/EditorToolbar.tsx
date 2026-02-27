@@ -42,10 +42,46 @@ const insertTools: { key: Tool; label: string; svgPath: string }[] = [
   { key: 'ellipse', label: '椭圆', svgPath: 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z' },
 ];
 
+const TABLE_GRID_MAX = 8;
+
+function TableGridPicker({ onSelect, onClose }: { onSelect: (rows: number, cols: number) => void; onClose: () => void }) {
+  const [hover, setHover] = React.useState({ r: 0, c: 0 });
+
+  return (
+    <div style={s.gridPicker} onMouseLeave={onClose}>
+      <div style={s.gridLabel}>{hover.r > 0 ? `${hover.r} × ${hover.c}` : '选择表格大小'}</div>
+      <div style={s.gridContainer}>
+        {Array.from({ length: TABLE_GRID_MAX }, (_, r) => (
+          <div key={r} style={{ display: 'flex' }}>
+            {Array.from({ length: TABLE_GRID_MAX }, (_, c) => {
+              const active = r < hover.r && c < hover.c;
+              return (
+                <div
+                  key={c}
+                  onMouseEnter={() => setHover({ r: r + 1, c: c + 1 })}
+                  onClick={() => onSelect(r + 1, c + 1)}
+                  style={{
+                    width: 22, height: 22, margin: 1,
+                    border: '1px solid ' + (active ? '#4a86e8' : '#d0d0d0'),
+                    background: active ? '#e0ecff' : '#fff',
+                    borderRadius: 2, cursor: 'pointer',
+                    transition: 'all 0.08s',
+                  }}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export const EditorToolbar: React.FC = () => {
-  const { activeTool, setActiveTool, addElement, deleteElement, selectedElementId, slides, currentSlideIndex, addSlide } = useEditorStore();
+  const { activeTool, setActiveTool, addElement, deleteElement, selectedElementId, slides, currentSlideIndex, addSlide, setPendingTableSize } = useEditorStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [showThemes, setShowThemes] = useState(false);
+  const [showTableGrid, setShowTableGrid] = useState(false);
   const slide = slides[currentSlideIndex];
   const selectedEl = slide.elements.find((e) => e.id === selectedElementId);
 
@@ -115,6 +151,24 @@ export const EditorToolbar: React.FC = () => {
             svgPath={t.svgPath}
           />
         ))}
+        <div style={{ position: 'relative' }}>
+          <ToolBtn
+            label="表格"
+            active={showTableGrid || activeTool === 'table'}
+            onClick={() => setShowTableGrid(!showTableGrid)}
+            svgPath="M3 3h18v18H3zM3 12h18M12 3v18"
+          />
+          {showTableGrid && (
+            <TableGridPicker
+              onSelect={(rows, cols) => {
+                setPendingTableSize({ rows, cols });
+                setActiveTool('table');
+                setShowTableGrid(false);
+              }}
+              onClose={() => setShowTableGrid(false)}
+            />
+          )}
+        </div>
         <ToolBtn
           label="图片"
           active={false}
@@ -203,4 +257,12 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: 'center', justifyContent: 'center',
   },
   themeName: { fontSize: 11, color: '#666' },
+  gridPicker: {
+    position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+    marginTop: 4, background: '#fff', borderRadius: 8, padding: '10px 12px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.15)', border: '1px solid #e5e5e5',
+    zIndex: 1000,
+  },
+  gridLabel: { fontSize: 12, color: '#555', textAlign: 'center' as const, marginBottom: 6, fontWeight: 500 },
+  gridContainer: { display: 'flex', flexDirection: 'column' as const },
 };

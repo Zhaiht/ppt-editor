@@ -25,6 +25,40 @@ export function drawElement(ctx: CanvasRenderingContext2D, el: SlideElement, isS
       ctx.stroke();
       break;
 
+    case 'table': {
+      const rows = el.rows || 3;
+      const cols = el.cols || 4;
+      const strokeColor = el.stroke || '#666666';
+      const strokeWidth = el.strokeWidth ?? 1;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(el.x, el.y, el.width, el.height);
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.strokeRect(el.x, el.y, el.width, el.height);
+
+      const rowHeight = el.height / rows;
+      const colWidth = el.width / cols;
+
+      // 横线
+      for (let r = 1; r < rows; r++) {
+        const y = el.y + r * rowHeight;
+        ctx.beginPath();
+        ctx.moveTo(el.x, y);
+        ctx.lineTo(el.x + el.width, y);
+        ctx.stroke();
+      }
+
+      // 竖线
+      for (let c = 1; c < cols; c++) {
+        const x = el.x + c * colWidth;
+        ctx.beginPath();
+        ctx.moveTo(x, el.y);
+        ctx.lineTo(x, el.y + el.height);
+        ctx.stroke();
+      }
+      break;
+    }
+
     case 'text':
       drawText(ctx, el, isEditing);
       break;

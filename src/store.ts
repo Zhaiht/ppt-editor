@@ -13,9 +13,11 @@ interface EditorState {
   activeTool: Tool;
   editingTextId: string | null;
   fileName: string;
+  pendingTableSize: { rows: number; cols: number } | null;
 
   // actions
   setFileName: (name: string) => void;
+  setPendingTableSize: (size: { rows: number; cols: number } | null) => void;
   setActiveTool: (tool: Tool) => void;
   setCurrentSlide: (index: number) => void;
   addSlide: (slide?: Slide) => void;
@@ -40,8 +42,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activeTool: 'select',
   editingTextId: null,
   fileName: '演示文档',
+  pendingTableSize: null,
 
   setFileName: (name) => set({ fileName: name }),
+  setPendingTableSize: (size) => set({ pendingTableSize: size }),
   setActiveTool: (tool) => set({ activeTool: tool }),
   setCurrentSlide: (index) => set({ currentSlideIndex: index, selectedElementId: null, editingTextId: null }),
 
