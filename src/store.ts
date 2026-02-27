@@ -12,8 +12,10 @@ interface EditorState {
   selectedElementId: string | null;
   activeTool: Tool;
   editingTextId: string | null;
+  fileName: string;
 
   // actions
+  setFileName: (name: string) => void;
   setActiveTool: (tool: Tool) => void;
   setCurrentSlide: (index: number) => void;
   addSlide: () => void;
@@ -37,7 +39,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedElementId: null,
   activeTool: 'select',
   editingTextId: null,
+  fileName: '演示文档',
 
+  setFileName: (name) => set({ fileName: name }),
   setActiveTool: (tool) => set({ activeTool: tool }),
   setCurrentSlide: (index) => set({ currentSlideIndex: index, selectedElementId: null, editingTextId: null }),
 

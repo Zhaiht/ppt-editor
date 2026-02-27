@@ -1,18 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useEditorStore } from '../store';
 import { exportToPptx } from '../utils/exportPptx';
 
 export const HeaderBar: React.FC = () => {
-  const { slides, addSlide } = useEditorStore();
+  const { slides, fileName, setFileName } = useEditorStore();
   const [exporting, setExporting] = useState(false);
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const menuTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const [editing, setEditing] = useState(false);
 
   const handleExport = async () => {
     setExporting(true);
-    setOpenMenu(null);
     try {
-      await exportToPptx(slides);
+      await exportToPptx(slides, fileName);
     } catch {
       alert('导出失败，请重试');
     } finally {
@@ -20,72 +18,25 @@ export const HeaderBar: React.FC = () => {
     }
   };
 
-  const handleMenuEnter = (menu: string) => {
-    clearTimeout(menuTimeout.current);
-    setOpenMenu(menu);
-  };
-
-  const handleMenuLeave = () => {
-    menuTimeout.current = setTimeout(() => setOpenMenu(null), 150);
-  };
-
-  const menus: { key: string; label: string; items: { label: string; onClick: () => void; disabled?: boolean }[] }[] = [
-    {
-      key: 'file', label: '文件', items: [
-        { label: '新建幻灯片', onClick: () => { addSlide(); setOpenMenu(null); } },
-        { label: exporting ? '导出中...' : '导出 PPTX', onClick: handleExport, disabled: exporting },
-      ],
-    },
-    {
-      key: 'edit', label: '编辑', items: [
-        { label: '撤销 (Ctrl+Z)', onClick: () => {}, disabled: true },
-        { label: '重做 (Ctrl+Y)', onClick: () => {}, disabled: true },
-      ],
-    },
-    {
-      key: 'view', label: '视图', items: [
-        { label: '适应窗口', onClick: () => {}, disabled: true },
-      ],
-    },
-  ];
-
   return (
     <div style={s.header}>
       <div style={s.left}>
-        <div style={s.logo}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d4a0ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2" />
-            <path d="M8 21h8M12 17v4" />
-          </svg>
-          <span style={s.logoText}>PPT 编辑器</span>
-        </div>
-        <div style={s.menuBar}>
-          {menus.map((menu) => (
-            <div
-              key={menu.key}
-              style={s.menuItem}
-              onMouseEnter={() => handleMenuEnter(menu.key)}
-              onMouseLeave={handleMenuLeave}
-            >
-              <span style={{
-                ...s.menuLabel,
-                background: openMenu === menu.key ? 'rgba(255,255,255,0.1)' : 'transparent',
-              }}>{menu.label}</span>
-              {openMenu === menu.key && (
-                <div style={s.dropdown}>
-                  {menu.items.map((item, i) => (
-                    <button
-                      key={i}
-                      style={{ ...s.dropdownItem, opacity: item.disabled ? 0.4 : 1 }}
-                      onClick={item.onClick}
-                      disabled={item.disabled}
-                    >{item.label}</button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d4a0ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" />
+          <path d="M8 21h8M12 17v4" />
+        </svg>
+        {editing ? (
+          <input
+            autoFocus
+            style={s.nameInput}
+            value={fileName}
+            onChange={(e) => setFileName(e.target.value)}
+            onBlur={() => { if (!fileName.trim()) setFileName('演示文档'); setEditing(false); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { if (!fileName.trim()) setFileName('演示文档'); setEditing(false); } }}
+          />
+        ) : (
+          <span style={s.nameText} onDoubleClick={() => setEditing(true)}>{fileName}</span>
+        )}
       </div>
       <div style={s.right}>
         <button style={s.headerBtn} onClick={handleExport} disabled={exporting} title="导出 PPTX">
@@ -99,6 +50,7 @@ export const HeaderBar: React.FC = () => {
   );
 };
 
+
 const s: Record<string, React.CSSProperties> = {
   header: {
     height: 40,
@@ -111,44 +63,25 @@ const s: Record<string, React.CSSProperties> = {
     zIndex: 100,
     userSelect: 'none',
   },
-  left: { display: 'flex', alignItems: 'center', gap: 4 },
+  left: { display: 'flex', alignItems: 'center', gap: 8 },
   right: { display: 'flex', alignItems: 'center', gap: 8 },
-  logo: { display: 'flex', alignItems: 'center', gap: 8, marginRight: 12 },
-  logoText: { color: '#e0e0e0', fontSize: 14, fontWeight: 600, letterSpacing: 0.5 },
-  menuBar: { display: 'flex', alignItems: 'center', gap: 0 },
-  menuItem: { position: 'relative' as const },
-  menuLabel: {
-    color: '#ccc',
-    fontSize: 13,
-    padding: '4px 12px',
+  nameText: {
+    color: '#e0e0e0',
+    fontSize: 14,
+    fontWeight: 600,
+    letterSpacing: 0.5,
+    cursor: 'default',
+  },
+  nameInput: {
+    background: 'rgba(255,255,255,0.1)',
+    border: '1px solid rgba(255,255,255,0.3)',
     borderRadius: 4,
-    cursor: 'pointer',
-    transition: 'background 0.15s',
-  },
-  dropdown: {
-    position: 'absolute' as const,
-    top: '100%',
-    left: 0,
-    marginTop: 4,
-    background: '#fff',
-    borderRadius: 6,
-    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-    border: '1px solid #e5e5e5',
-    padding: '4px 0',
-    minWidth: 180,
-    zIndex: 1000,
-  },
-  dropdownItem: {
-    display: 'block',
-    width: '100%',
-    padding: '8px 16px',
-    border: 'none',
-    background: 'none',
-    textAlign: 'left' as const,
-    fontSize: 13,
-    color: '#333',
-    cursor: 'pointer',
-    transition: 'background 0.1s',
+    color: '#e0e0e0',
+    fontSize: 14,
+    fontWeight: 600,
+    padding: '2px 8px',
+    outline: 'none',
+    width: 200,
   },
   headerBtn: {
     display: 'flex',
