@@ -74,8 +74,11 @@ function addImageElement(pptSlide: PptxGenJS.Slide, el: SlideElement) {
 function addTableElement(pptSlide: PptxGenJS.Slide, el: SlideElement) {
   const rows = el.rows || 3;
   const cols = el.cols || 4;
-  const tableData: string[][] = Array.from({ length: rows }, () =>
-    Array.from({ length: cols }, () => ''),
+  const tableData: PptxGenJS.TableRow[] = Array.from({ length: rows }, (_, r) =>
+    Array.from({ length: cols }, (_, c) => ({
+      text: el.tableData?.[r]?.[c] || '',
+      options: { fontSize: 10, fontFace: 'Microsoft YaHei' },
+    })),
   );
 
   pptSlide.addTable(tableData, {

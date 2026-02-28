@@ -56,6 +56,24 @@ export function drawElement(ctx: CanvasRenderingContext2D, el: SlideElement, isS
         ctx.lineTo(x, el.y + el.height);
         ctx.stroke();
       }
+
+      // 绘制单元格文字
+      if (el.tableData) {
+        ctx.fillStyle = '#333333';
+        const fontSize = Math.min(14, rowHeight * 0.5);
+        ctx.font = `${fontSize}px sans-serif`;
+        ctx.textBaseline = 'middle';
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const text = el.tableData[r]?.[c];
+            if (text) {
+              const cx = el.x + c * colWidth + 4;
+              const cy = el.y + r * rowHeight + rowHeight / 2;
+              ctx.fillText(text, cx, cy, colWidth - 8);
+            }
+          }
+        }
+      }
       break;
     }
 

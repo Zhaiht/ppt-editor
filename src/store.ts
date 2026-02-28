@@ -12,12 +12,15 @@ interface EditorState {
   selectedElementId: string | null;
   activeTool: Tool;
   editingTextId: string | null;
+  editingTableCell: { elementId: string; row: number; col: number } | null;
   fileName: string;
   pendingTableSize: { rows: number; cols: number } | null;
 
   // actions
   setFileName: (name: string) => void;
   setPendingTableSize: (size: { rows: number; cols: number } | null) => void;
+  setEditingTableCell: (cell: { elementId: string; row: number; col: number } | null) => void;
+  updateTableCell: (elementId: string, row: number, col: number, value: string) => void;
   setActiveTool: (tool: Tool) => void;
   setCurrentSlide: (index: number) => void;
   addSlide: (slide?: Slide) => void;
@@ -41,11 +44,25 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedElementId: null,
   activeTool: 'select',
   editingTextId: null,
+  editingTableCell: null,
   fileName: '演示文档',
   pendingTableSize: null,
 
   setFileName: (name) => set({ fileName: name }),
   setPendingTableSize: (size) => set({ pendingTableSize: size }),
+  setEditingTableCell: (cell) => set({ editingTableCell: cell }),
+  updateTableCell: (elementId, row, col, value) => set((s) => {
+    const slides = [...s.slides];
+    const slide = { ...slides[s.currentSlideIndex] };
+    slide.elements = slide.elements.map((el) => {
+      if (el.id !== elementId || !el.tableData) return el;
+      const tableData = el.tableData.map((r) => [...r]);
+      tableData[row][col] = value;
+      return { ...el, tableData };
+    });
+    slides[s.currentSlideIndex] = slide;
+    return { slides };
+  }),
   setActiveTool: (tool) => set({ activeTool: tool }),
   setCurrentSlide: (index) => set({ currentSlideIndex: index, selectedElementId: null, editingTextId: null }),
 
@@ -99,7 +116,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return { slides, selectedElementId: null, editingTextId: null };
   }),
 
-  selectElement: (id) => set({ selectedElementId: id, editingTextId: null }),
+  selectElement: (id) => set({ selectedElementId: id, editingTextId: null, editingTableCell: null }),
   setEditingText: (id) => set({ editingTextId: id }),
   setSlideBackground: (color) => set((s) => {
     const slides = [...s.slides];

@@ -20,6 +20,7 @@ export interface SlideElement {
   // table specific
   rows?: number;
   cols?: number;
+  tableData?: string[][];
 }
 
 export interface Slide {
