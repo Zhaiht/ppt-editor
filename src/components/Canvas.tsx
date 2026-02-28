@@ -14,13 +14,14 @@ export const Canvas: React.FC = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [canvasSize, setCanvasSize] = useState({ w: 800, h: 600 });
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const [hoverTableHeader, setHoverTableHeader] = useState<{ type: 'row' | 'col'; index: number } | null>(null);
   const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
 
   const {
     slides, currentSlideIndex, selectedElementId, activeTool, editingTextId, pendingTableSize,
-    editingTableCell,
+    editingTableCell, tableSelection,
     selectElement, addElement, updateElement, setActiveTool, setEditingText, setPendingTableSize,
-    setEditingTableCell, updateTableCell,
+    setEditingTableCell, updateTableCell, setTableSelection,
   } = useEditorStore();
 
   const slide = slides[currentSlideIndex];
@@ -61,8 +62,8 @@ export const Canvas: React.FC = () => {
     canvas.style.height = canvasSize.h + 'px';
     ctx.scale(dpr, dpr);
     drawSlide(ctx, canvasSize.w, canvasSize.h, slide.elements, slide.background,
-      selectedElementId, editingTextId, imageCacheRef.current, scale, offsetX, offsetY);
-  }, [canvasSize, slide, selectedElementId, editingTextId, editingTableCell, scale, offsetX, offsetY]);
+      selectedElementId, editingTextId, imageCacheRef.current, scale, offsetX, offsetY, tableSelection);
+  }, [canvasSize, slide, selectedElementId, editingTextId, editingTableCell, tableSelection, scale, offsetX, offsetY]);
 
   // load images into cache
   useEffect(() => {
@@ -262,6 +263,9 @@ export const Canvas: React.FC = () => {
     return { cellX, cellY, colWidth, rowHeight, cellValue };
   })() : null;
 
+  // selected table for row/col headers
+  const selectedTableEl = selectedElementId ? slide.elements.find((el) => el.id === selectedElementId && el.type === 'table') : null;
+
   return (
     <div ref={containerRef} style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
       <canvas
@@ -356,6 +360,123 @@ export const Canvas: React.FC = () => {
           }}
         />
       )}
+      {selectedTableEl && !editingTableCell && (() => {
+        const tel = selectedTableEl;
+        const rows = tel.rows || 3;
+        const cols = tel.cols || 4;
+        const colWidth = tel.width / cols;
+        const rowHeight = tel.height / rows;
+        const headerSize = 18;
+
+        // Collect which headers to show: hovered + selected (deduplicated)
+        const headersToShow: { type: 'row' | 'col'; index: number; isSelected: boolean }[] = [];
+        if (tableSelection?.elementId === tel.id) {
+          headersToShow.push({ type: tableSelection.type, index: tableSelection.index, isSelected: true });
+        }
+        if (hoverTableHeader) {
+          const alreadyShown = headersToShow.some(
+            (h) => h.type === hoverTableHeader.type && h.index === hoverTableHeader.index,
+          );
+          if (!alreadyShown) {
+            headersToShow.push({ type: hoverTableHeader.type, index: hoverTableHeader.index, isSelected: false });
+          }
+        }
+
+        return (
+          <>
+            {/* Invisible hover zones: top edge for columns */}
+            <div
+              style={{
+                position: 'absolute',
+                left: offsetX + tel.x * scale,
+                top: offsetY + tel.y * scale - headerSize - 4,
+                width: tel.width * scale,
+                height: headerSize + 4,
+                cursor: 'pointer',
+              }}
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const relX = e.clientX - rect.left;
+                const c = Math.min(cols - 1, Math.max(0, Math.floor(relX / (colWidth * scale))));
+                setHoverTableHeader({ type: 'col', index: c });
+              }}
+              onMouseLeave={() => setHoverTableHeader(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (hoverTableHeader?.type === 'col') {
+                  setTableSelection({ elementId: tel.id, type: 'col', index: hoverTableHeader.index });
+                }
+              }}
+            />
+            {/* Invisible hover zones: left edge for rows */}
+            <div
+              style={{
+                position: 'absolute',
+                left: offsetX + tel.x * scale - headerSize - 4,
+                top: offsetY + tel.y * scale,
+                width: headerSize + 4,
+                height: tel.height * scale,
+                cursor: 'pointer',
+              }}
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const relY = e.clientY - rect.top;
+                const r = Math.min(rows - 1, Math.max(0, Math.floor(relY / (rowHeight * scale))));
+                setHoverTableHeader({ type: 'row', index: r });
+              }}
+              onMouseLeave={() => setHoverTableHeader(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (hoverTableHeader?.type === 'row') {
+                  setTableSelection({ elementId: tel.id, type: 'row', index: hoverTableHeader.index });
+                }
+              }}
+            />
+            {/* Render visible header buttons */}
+            {headersToShow.map((h) => {
+              if (h.type === 'col') {
+                return (
+                  <div
+                    key={`col-${h.index}`}
+                    style={{
+                      position: 'absolute',
+                      left: offsetX + (tel.x + h.index * colWidth) * scale,
+                      top: offsetY + tel.y * scale - headerSize - 2,
+                      width: colWidth * scale,
+                      height: headerSize,
+                      background: h.isSelected ? '#4a86e8' : '#e8ecf0',
+                      color: h.isSelected ? '#fff' : '#666',
+                      border: '1px solid #ccc',
+                      borderRadius: '3px 3px 0 0',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 10, pointerEvents: 'none', userSelect: 'none',
+                    }}
+                  >▼</div>
+                );
+              } else {
+                return (
+                  <div
+                    key={`row-${h.index}`}
+                    style={{
+                      position: 'absolute',
+                      left: offsetX + tel.x * scale - headerSize - 2,
+                      top: offsetY + (tel.y + h.index * rowHeight) * scale,
+                      width: headerSize,
+                      height: rowHeight * scale,
+                      background: h.isSelected ? '#4a86e8' : '#e8ecf0',
+                      color: h.isSelected ? '#fff' : '#666',
+                      border: '1px solid #ccc',
+                      borderRadius: '3px 0 0 3px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 10, pointerEvents: 'none', userSelect: 'none',
+                    }}
+                  >▶</div>
+                );
+              }
+            })}
+          </>
+        );
+      })()}
     </div>
   );
 };

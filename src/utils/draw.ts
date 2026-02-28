@@ -133,6 +133,34 @@ function drawSelectionBox(ctx: CanvasRenderingContext2D, el: SlideElement) {
   }
 }
 
+function drawTableSelectionHighlight(
+  ctx: CanvasRenderingContext2D,
+  el: SlideElement,
+  sel: { type: 'row' | 'col'; index: number },
+) {
+  const rows = el.rows || 3;
+  const cols = el.cols || 4;
+  const colWidth = el.width / cols;
+  const rowHeight = el.height / rows;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(74, 134, 232, 0.15)';
+  ctx.strokeStyle = '#4a86e8';
+  ctx.lineWidth = 2;
+
+  if (sel.type === 'row') {
+    const y = el.y + sel.index * rowHeight;
+    ctx.fillRect(el.x, y, el.width, rowHeight);
+    ctx.strokeRect(el.x, y, el.width, rowHeight);
+  } else {
+    const x = el.x + sel.index * colWidth;
+    ctx.fillRect(x, el.y, colWidth, el.height);
+    ctx.strokeRect(x, el.y, colWidth, el.height);
+  }
+
+  ctx.restore();
+}
+
 export function drawSlide(
   ctx: CanvasRenderingContext2D,
   canvasWidth: number,
@@ -145,6 +173,7 @@ export function drawSlide(
   scale: number,
   offsetX: number,
   offsetY: number,
+  tableSelection?: { elementId: string; type: 'row' | 'col'; index: number } | null,
 ) {
   const SLIDE_W = 960;
   const SLIDE_H = 540;
@@ -190,6 +219,10 @@ export function drawSlide(
       }
     } else {
       drawElement(ctx, el, el.id === selectedId, el.id === editingId);
+      // draw table selection highlight
+      if (el.type === 'table' && tableSelection && tableSelection.elementId === el.id) {
+        drawTableSelectionHighlight(ctx, el, tableSelection);
+      }
     }
   }
 

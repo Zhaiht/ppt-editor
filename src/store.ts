@@ -13,6 +13,7 @@ interface EditorState {
   activeTool: Tool;
   editingTextId: string | null;
   editingTableCell: { elementId: string; row: number; col: number } | null;
+  tableSelection: { elementId: string; type: 'row' | 'col'; index: number } | null;
   fileName: string;
   pendingTableSize: { rows: number; cols: number } | null;
 
@@ -20,6 +21,7 @@ interface EditorState {
   setFileName: (name: string) => void;
   setPendingTableSize: (size: { rows: number; cols: number } | null) => void;
   setEditingTableCell: (cell: { elementId: string; row: number; col: number } | null) => void;
+  setTableSelection: (sel: { elementId: string; type: 'row' | 'col'; index: number } | null) => void;
   updateTableCell: (elementId: string, row: number, col: number, value: string) => void;
   setActiveTool: (tool: Tool) => void;
   setCurrentSlide: (index: number) => void;
@@ -45,12 +47,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activeTool: 'select',
   editingTextId: null,
   editingTableCell: null,
+  tableSelection: null,
   fileName: '演示文档',
   pendingTableSize: null,
 
   setFileName: (name) => set({ fileName: name }),
   setPendingTableSize: (size) => set({ pendingTableSize: size }),
-  setEditingTableCell: (cell) => set({ editingTableCell: cell }),
+  setEditingTableCell: (cell) => set({ editingTableCell: cell, tableSelection: null }),
+  setTableSelection: (sel) => set({ tableSelection: sel, editingTableCell: null }),
   updateTableCell: (elementId, row, col, value) => set((s) => {
     const slides = [...s.slides];
     const slide = { ...slides[s.currentSlideIndex] };
@@ -116,7 +120,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return { slides, selectedElementId: null, editingTextId: null };
   }),
 
-  selectElement: (id) => set({ selectedElementId: id, editingTextId: null, editingTableCell: null }),
+  selectElement: (id) => set({ selectedElementId: id, editingTextId: null, editingTableCell: null, tableSelection: null }),
   setEditingText: (id) => set({ editingTextId: id }),
   setSlideBackground: (color) => set((s) => {
     const slides = [...s.slides];
